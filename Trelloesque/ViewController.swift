@@ -58,7 +58,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     func addEmptyCellToTableView(tableView: UITableView, atIndexPath indexPath: NSIndexPath) {
         focus = (tableView, indexPath)
-        tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+        tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
     }
 
     // MARK: - Table view
@@ -78,9 +78,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
         
         if let (tv, ip) = focus where tv === tableView && ip == indexPath {
-            cell.contentView.backgroundColor = UIColor.whiteColor()
-            cell.textLabel!.text = "EMPTY"
+            cell.alpha = 0.0
+            cell.contentView.alpha = 0.0
         } else {
+            cell.alpha = 1.0
+            cell.contentView.alpha = 1.0
             switch tableView.tag {
             case ViewTag.Left: cell.textLabel!.text = array1[indexPath.row]
             case ViewTag.Center: cell.textLabel!.text = array2[indexPath.row]
@@ -117,7 +119,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 offset = gr.locationInView(cell)
                 scrollView.addSubview(snapshot!)
                 
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
                 addEmptyCellToTableView(tableView, atIndexPath: indexPath)
             }
         case .Changed:
@@ -136,12 +138,12 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                     // Remove row in previous table view, add row in current table view
                     let (oldTableView, oldIndexPath) = focus!
                     focus = (tableView, indexPath)
-                    oldTableView.deleteRowsAtIndexPaths([oldIndexPath], withRowAnimation: .Automatic)
-                    tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+                    oldTableView.deleteRowsAtIndexPaths([oldIndexPath], withRowAnimation: .Fade)
+                    tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
                 }
             }
         case .Ended, .Failed, .Cancelled:
-            if let (tableView, indexPath) = convertPointToIndexPath(location) {
+            if let (tableView, indexPath) = convertPointToIndexPath(location) ?? focus {
                 focus = nil
                 if tableView === tableView1 {
                     array1.insert(element!, atIndex: indexPath.row)
@@ -153,7 +155,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 element = nil
                 snapshot!.removeFromSuperview()
                 snapshot = nil
-                tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+                tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
         default:
             break
