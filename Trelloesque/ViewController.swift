@@ -23,6 +23,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     @IBOutlet weak var tableView3: UITableView!
     var focus: (UITableView, NSIndexPath)?
     var element: String?
+    var snapshot: UIView?
+    var offset: CGPoint?
     
     var array1 = ["Left-1", "Left-2", "Left-3"]
     var array2 = ["Center-1", "Center-2", "Center-3"]
@@ -107,10 +109,23 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 } else {
                     element = array3.removeAtIndex(indexPath.row)
                 }
+                
+                // Make a snapshot of the cell
+                let cell = tableView.cellForRowAtIndexPath(indexPath)!
+                snapshot = cell.snapshotViewAfterScreenUpdates(true)
+                snapshot!.frame = scrollView.convertRect(cell.frame, fromView: cell.superview)
+                offset = gr.locationInView(cell)
+                scrollView.addSubview(snapshot!)
+                
                 tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
                 addEmptyCellToTableView(tableView, atIndexPath: indexPath)
             }
         case .Changed:
+            var offsetLocation = location
+            offsetLocation.x -= offset!.x
+            offsetLocation.y -= offset!.y
+            snapshot!.frame.origin = offsetLocation
+            
             if let (tableView, indexPath) = convertPointToIndexPath(location) {
                 if tableView === focus!.0 {
                     // Simply move row
@@ -136,6 +151,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                     array3.insert(element!, atIndex: indexPath.row)
                 }
                 element = nil
+                snapshot!.removeFromSuperview()
+                snapshot = nil
                 tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
             }
         default:
