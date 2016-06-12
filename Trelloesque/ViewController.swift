@@ -48,7 +48,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     func convertPointToIndexPath(point: CGPoint) -> (UITableView, NSIndexPath)? {
         if let tableView = [tableView1, tableView2, tableView3].filter({ $0.frame.contains(point) }).first {
             let localPoint = scrollView.convertPoint(point, toView: tableView)
-            let lastRowIndex = focus == nil ? tableView.numberOfRowsInSection(0) : tableView.numberOfRowsInSection(0) - 1
+            let lastRowIndex = focus?.0 === tableView ? tableView.numberOfRowsInSection(0) - 1 : tableView.numberOfRowsInSection(0)
             let indexPath = tableView.indexPathForRowAtPoint(localPoint) ?? NSIndexPath(forRow: lastRowIndex, inSection: 0)
             return (tableView, indexPath)
         }
@@ -56,11 +56,6 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return nil
     }
     
-    func addEmptyCellToTableView(tableView: UITableView, atIndexPath indexPath: NSIndexPath) {
-        focus = (tableView, indexPath)
-        tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-    }
-
     // MARK: - Table view
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -118,9 +113,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 snapshot!.frame = scrollView.convertRect(cell.frame, fromView: cell.superview)
                 offset = gr.locationInView(cell)
                 scrollView.addSubview(snapshot!)
+                focus = (tableView, indexPath)
                 
-                tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-                addEmptyCellToTableView(tableView, atIndexPath: indexPath)
+                tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
         case .Changed:
             var offsetLocation = location
