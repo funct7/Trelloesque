@@ -99,6 +99,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         switch gr.state {
         case .Began:
             if let (tableView, indexPath) = convertPointToIndexPath(location) {
+                guard tableView.cellForRowAtIndexPath(indexPath) != nil else { return }
+                
                 if tableView === tableView1 {
                     element = array1.removeAtIndex(indexPath.row)
                 } else if tableView === tableView2 {
@@ -106,6 +108,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 } else {
                     element = array3.removeAtIndex(indexPath.row)
                 }
+                
+                // Remove previous snapshot if existing
+                snapshot?.removeFromSuperview()
                 
                 // Make a snapshot of the cell
                 let cell = tableView.cellForRowAtIndexPath(indexPath)!
@@ -148,8 +153,10 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                     array3.insert(element!, atIndex: indexPath.row)
                 }
                 element = nil
-                snapshot!.removeFromSuperview()
-                snapshot = nil
+                let snapshot = self.snapshot!
+                self.snapshot = nil
+                snapshot.removeFromSuperview()
+                
                 tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
         default:
