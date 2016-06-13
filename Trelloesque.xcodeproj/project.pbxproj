@@ -135,9 +135,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 03AA8D481D0C420C00FDCBAE /* Build configuration list for PBXNativeTarget "Trelloesque" */;
 			buildPhases = (
+				0320D4811D0E326E0057B556 /* ShellScript */,
 				03AA8D191D0C420C00FDCBAE /* Sources */,
 				03AA8D1A1D0C420C00FDCBAE /* Frameworks */,
 				03AA8D1B1D0C420C00FDCBAE /* Resources */,
+				0320D4821D0E32710057B556 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -254,6 +256,35 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0320D4811D0E326E0057B556 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Set the build number to the count of Git commits\nbuildNumber=$(git rev-list HEAD | wc -l | tr -d ' ')\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $buildNumber\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"";
+		};
+		0320D4821D0E32710057B556 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Set the build number to \"DEVELOPMENT\"\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion DEVELOPMENT\" \"${PROJECT_DIR}/${INFOPLIST_FILE}\"";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		03AA8D191D0C420C00FDCBAE /* Sources */ = {
@@ -495,6 +526,7 @@
 				03AA8D4A1D0C420C00FDCBAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03AA8D4B1D0C420C00FDCBAE /* Build configuration list for PBXNativeTarget "TrelloesqueTests" */ = {
 			isa = XCConfigurationList;
@@ -503,6 +535,7 @@
 				03AA8D4D1D0C420C00FDCBAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		03AA8D4E1D0C420C00FDCBAE /* Build configuration list for PBXNativeTarget "TrelloesqueUITests" */ = {
 			isa = XCConfigurationList;
@@ -511,6 +544,7 @@
 				03AA8D501D0C420C00FDCBAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
