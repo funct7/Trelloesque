@@ -95,56 +95,64 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     // MARK: Gesture recognizer
     
     func longPressAction(gr: UILongPressGestureRecognizer) {
+        func cancelAction() {
+            gr.enabled = false
+            gr.enabled = true
+        }
+        
         let location = gr.locationInView(scrollView)
         switch gr.state {
         case .Began:
-            if let (tableView, indexPath) = convertPointToIndexPath(location) {
-                guard tableView.cellForRowAtIndexPath(indexPath) != nil else { return }
-                
-                if tableView === tableView1 {
-                    element = array1.removeAtIndex(indexPath.row)
-                } else if tableView === tableView2 {
-                    element = array2.removeAtIndex(indexPath.row)
-                } else {
-                    element = array3.removeAtIndex(indexPath.row)
-                }
-                
-                // Remove previous snapshot if existing
-                snapshot?.removeFromSuperview()
-                
-                // Make a snapshot of the cell
-                let cell = tableView.cellForRowAtIndexPath(indexPath)!
-                snapshot = cell.snapshotViewAfterScreenUpdates(true)
-                snapshot!.frame = scrollView.convertRect(cell.frame, fromView: cell.superview)
-                offset = gr.locationInView(cell)
-                scrollView.addSubview(snapshot!)
-                focus = (tableView, indexPath)
-                
-                tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+            guard let (tableView, indexPath) = convertPointToIndexPath(location) else { cancelAction(); return }
+            guard tableView.cellForRowAtIndexPath(indexPath) != nil else { cancelAction(); return }
+            
+            if tableView === tableView1 {
+                element = array1.removeAtIndex(indexPath.row)
+            } else if tableView === tableView2 {
+                element = array2.removeAtIndex(indexPath.row)
+            } else {
+                element = array3.removeAtIndex(indexPath.row)
             }
+            
+            // Make a snapshot of the cell
+            let cell = tableView.cellForRowAtIndexPath(indexPath)!
+            offset = gr.locationInView(cell)
+            
+            let snapshot = cell.snapshotViewAfterScreenUpdates(true)
+            snapshot.frame = scrollView.convertRect(cell.frame, fromView: cell.superview)
+            scrollView.addSubview(snapshot)
+            self.snapshot = snapshot
+            
+            focus = (tableView, indexPath)
+            
+            tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
         case .Changed:
+            guard let focus = focus else { cancelAction(); return }
+            
             var offsetLocation = location
             offsetLocation.x -= offset!.x
             offsetLocation.y -= offset!.y
             snapshot!.frame.origin = offsetLocation
             
-            if let (tableView, indexPath) = convertPointToIndexPath(location) {
-                if tableView === focus!.0 {
-                    // Simply move row
-                    let oldIndexPath = focus!.1
-                    focus = (tableView, indexPath)
-                    tableView.moveRowAtIndexPath(oldIndexPath, toIndexPath: indexPath)
-                } else {
-                    // Remove row in previous table view, add row in current table view
-                    let (oldTableView, oldIndexPath) = focus!
-                    focus = (tableView, indexPath)
-                    oldTableView.deleteRowsAtIndexPaths([oldIndexPath], withRowAnimation: .Fade)
-                    tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-                }
+            guard let (tableView, indexPath) = convertPointToIndexPath(location) else { return }
+            
+            if tableView === focus.0 {
+                // Simply move row
+                let oldIndexPath = focus.1
+                self.focus = (tableView, indexPath)
+                tableView.moveRowAtIndexPath(oldIndexPath, toIndexPath: indexPath)
+            } else {
+                // Remove row in previous table view, add row in current table view
+                let (oldTableView, oldIndexPath) = focus
+                self.focus = (tableView, indexPath)
+                oldTableView.deleteRowsAtIndexPaths([oldIndexPath], withRowAnimation: .Fade)
+                tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
         case .Ended, .Failed, .Cancelled:
+            guard let _ = focus else { return }
+            
             if let (tableView, indexPath) = convertPointToIndexPath(location) ?? focus {
-                focus = nil
+                self.focus = nil
                 if tableView === tableView1 {
                     array1.insert(element!, atIndex: indexPath.row)
                 } else if tableView === tableView2 {
@@ -153,9 +161,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                     array3.insert(element!, atIndex: indexPath.row)
                 }
                 element = nil
-                let snapshot = self.snapshot!
+                self.snapshot?.removeFromSuperview()
                 self.snapshot = nil
-                snapshot.removeFromSuperview()
                 
                 tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
             }
