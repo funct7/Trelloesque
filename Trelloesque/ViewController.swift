@@ -21,7 +21,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     @IBOutlet weak var tableView1: UITableView!
     @IBOutlet weak var tableView2: UITableView!
     @IBOutlet weak var tableView3: UITableView!
-    var focus: (UITableView, NSIndexPath)?
+    var focus: (UITableView, IndexPath)?
     var element: String?
     var snapshot: UIView?
     var offset: CGPoint?
@@ -45,11 +45,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         // Dispose of any resources that can be recreated.
     }
     
-    func convertPointToIndexPath(point: CGPoint) -> (UITableView, NSIndexPath)? {
+    func convertPointToIndexPath(point: CGPoint) -> (UITableView, IndexPath)? {
         if let tableView = [tableView1, tableView2, tableView3].filter({ $0.frame.contains(point) }).first {
-            let localPoint = scrollView.convertPoint(point, toView: tableView)
-            let lastRowIndex = focus?.0 === tableView ? tableView.numberOfRowsInSection(0) - 1 : tableView.numberOfRowsInSection(0)
-            let indexPath = tableView.indexPathForRowAtPoint(localPoint) ?? NSIndexPath(forRow: lastRowIndex, inSection: 0)
+            let localPoint = scrollView.convert(point, to: tableView)
+            let lastRowIndex = focus?.0 === tableView ? tableView.numberOfRows(inSection: 0) - 1 : tableView.numberOfRows(inSection: 0)
+            let indexPath = tableView.indexPathForRow(at: localPoint) ?? NSIndexPath(row: lastRowIndex, section: 0) as IndexPath
             return (tableView, indexPath)
         }
         
@@ -58,7 +58,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     // MARK: - Table view
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         var count: Int!
         switch tableView.tag {
         case ViewTag.Left: count = array1.count
@@ -69,10 +69,10 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return focus?.0 === tableView ? count + 1 : count
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath)
         
-        if let (tv, ip) = focus where tv === tableView && ip == indexPath {
+        if let (tv, ip) = focus, tv === tableView && ip as IndexPath == indexPath {
             cell.alpha = 0.0
             cell.contentView.alpha = 0.0
         } else {
@@ -88,45 +88,45 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return cell
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath as IndexPath, animated: true)
     }
     
     // MARK: Gesture recognizer
     
-    func longPressAction(gr: UILongPressGestureRecognizer) {
+    @objc func longPressAction(gr: UILongPressGestureRecognizer) {
         func cancelAction() {
-            gr.enabled = false
-            gr.enabled = true
+            gr.isEnabled = false
+            gr.isEnabled = true
         }
         
-        let location = gr.locationInView(scrollView)
+        let location = gr.location(in: scrollView)
         switch gr.state {
-        case .Began:
-            guard let (tableView, indexPath) = convertPointToIndexPath(location) else { cancelAction(); return }
-            guard tableView.cellForRowAtIndexPath(indexPath) != nil else { cancelAction(); return }
+        case .began:
+            guard let (tableView, indexPath) = convertPointToIndexPath(point: location) else { cancelAction(); return }
+            guard tableView.cellForRow(at: indexPath as IndexPath) != nil else { cancelAction(); return }
             
             if tableView === tableView1 {
-                element = array1.removeAtIndex(indexPath.row)
+                element = array1.remove(at: indexPath.row)
             } else if tableView === tableView2 {
-                element = array2.removeAtIndex(indexPath.row)
+                element = array2.remove(at: indexPath.row)
             } else {
-                element = array3.removeAtIndex(indexPath.row)
+                element = array3.remove(at: indexPath.row)
             }
             
             // Make a snapshot of the cell
-            let cell = tableView.cellForRowAtIndexPath(indexPath)!
-            offset = gr.locationInView(cell)
+            let cell = tableView.cellForRow(at: indexPath as IndexPath)!
+            offset = gr.location(in: cell)
             
-            let snapshot = cell.snapshotViewAfterScreenUpdates(true)
-            snapshot.frame = scrollView.convertRect(cell.frame, fromView: cell.superview)
-            scrollView.addSubview(snapshot)
+            let snapshot = cell.snapshotView(afterScreenUpdates: true)
+            snapshot?.frame = scrollView.convert(cell.frame, from: cell.superview)
+            scrollView.addSubview(snapshot!)
             self.snapshot = snapshot
             
             focus = (tableView, indexPath)
             
-            tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-        case .Changed:
+            tableView.reloadRows(at: [indexPath as IndexPath], with: .fade)
+        case .changed:
             guard let focus = focus else { cancelAction(); return }
             
             var offsetLocation = location
@@ -134,37 +134,37 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             offsetLocation.y -= offset!.y
             snapshot!.frame.origin = offsetLocation
             
-            guard let (tableView, indexPath) = convertPointToIndexPath(location) else { return }
+            guard let (tableView, indexPath) = convertPointToIndexPath(point: location) else { return }
             
             if tableView === focus.0 {
                 // Simply move row
                 let oldIndexPath = focus.1
                 self.focus = (tableView, indexPath)
-                tableView.moveRowAtIndexPath(oldIndexPath, toIndexPath: indexPath)
+                tableView.moveRow(at: oldIndexPath as IndexPath, to: indexPath as IndexPath)
             } else {
                 // Remove row in previous table view, add row in current table view
                 let (oldTableView, oldIndexPath) = focus
                 self.focus = (tableView, indexPath)
-                oldTableView.deleteRowsAtIndexPaths([oldIndexPath], withRowAnimation: .Fade)
-                tableView.insertRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                oldTableView.deleteRows(at: [oldIndexPath as IndexPath], with: .fade)
+                tableView.insertRows(at: [indexPath as IndexPath], with: .fade)
             }
-        case .Ended, .Failed, .Cancelled:
+        case .ended, .failed, .cancelled:
             guard let _ = focus else { return }
             
-            if let (tableView, indexPath) = convertPointToIndexPath(location) ?? focus {
+            if let (tableView, indexPath) = convertPointToIndexPath(point: location) ?? focus {
                 self.focus = nil
                 if tableView === tableView1 {
-                    array1.insert(element!, atIndex: indexPath.row)
+                    array1.insert(element!, at: indexPath.row)
                 } else if tableView === tableView2 {
-                    array2.insert(element!, atIndex: indexPath.row)
+                    array2.insert(element!, at: indexPath.row)
                 } else {
-                    array3.insert(element!, atIndex: indexPath.row)
+                    array3.insert(element!, at: indexPath.row)
                 }
                 element = nil
                 self.snapshot?.removeFromSuperview()
                 self.snapshot = nil
                 
-                tableView.reloadRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+                tableView.reloadRows(at: [indexPath as IndexPath], with: .fade)
             }
         default:
             break
